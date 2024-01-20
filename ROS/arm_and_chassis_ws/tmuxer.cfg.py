@@ -40,7 +40,7 @@ _targets = {
 	'setup': [
 		{
 			'driver': 'cd ../../SW/Driver/motor_ctrl/',
-			'app': 'cd ../../SW/App/wc_rosless_teleop/test/',
+			'app': 'cd ../../SW/Test/test_app/test/',
 			'dmesg': 'cd ../../SW/Driver/motor_ctrl/',
 		},
 		
@@ -68,7 +68,7 @@ _targets = {
 				''',
 			'app' : '''
 				./build/test_bldc 0
-				./build/test_chassis NO_ENTER
+				./build/test NO_ENTER
 				''',
 		},
 	],

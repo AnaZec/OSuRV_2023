@@ -22,7 +22,14 @@ one_file_programs = [
 	'test_servos.c',
 	'test_bldc.c',
 	'test_pwm_map.cpp',
-	'test_joypad.cpp',
+	
+]
+
+rosless_chassis = [
+    'test.c',
+    'libenjoy.c',
+    'libenjoy_linux.c'
+
 ]
 
 def options(opt):
@@ -62,6 +69,16 @@ def build(bld):
 			source = s,
 			use = 'motor_ctrl_driver',
 			install_path = False
+		)
+		
+		
+		bld.program(
+            target = 'test',
+            source = rosless_chassis,
+            includes = '.',
+            use = 'motor_ctrl_driver',
+            install_path = False
+		
 		)
 
 def expand_app(app):

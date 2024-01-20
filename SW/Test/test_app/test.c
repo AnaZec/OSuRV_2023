@@ -5,7 +5,7 @@
   #include <windows.h>
 #endif
 
-#include "../src/libenjoy.h"
+#include "libenjoy.h"
 
 
 #include <stdint.h> // uint16_t and family
@@ -20,6 +20,7 @@
 #include "/home/pi/OSuRV_2023/SW/Driver/motor_ctrl/include/motor_ctrl.h"// dev/motor_ctrl
 
 static int16_t duty[2]; //duty[0] - BLDC, duty[1] - servo
+static int firstSetup = 0;
 
 
 //Funkcija za konvertovanje brojeva joypad-a u duty kod servomotora
@@ -68,46 +69,9 @@ int joypad2speed(int joyNum){
 }
 
 
-//Funkcija za upravljacki servo za skretanje
-int runServo(int duty_servo){
-	
-	int fd;
-	int r;
-
-
-	duty[1] = duty_servo;
-
-	for(int i = 0; i < 2; i++){
-		printf("duty[%d] = %d\n",i, duty[i]);
-	}
-
-
-	
-	int s = sizeof(duty[1])*1;
-	
-	lseek(fd, SEEK_SET, 0); // Seek on start.
-	
-	r = write(fd, (char*)&duty[1], s);
-	if(r != s){
-		fprintf(stderr, "ERROR: write went wrong!\n");
-		return 4;
-	}
-	
-	
-	
-
-	return 0;
-
-
-
-}
-
 //Funkcija run_bldc
 int runBLDC(int speed){ //BLDC je channel 0 ostali su servo
 	
-	int fd;
-	int r;
-
 
 	// |speed| = [0, 100] -> threshold = [10, 0].
 	// it will be <<1 in write() so then will be [20, 0].
@@ -133,21 +97,29 @@ int runBLDC(int speed){ //BLDC je channel 0 ostali su servo
 	// Write just channel 0, which is BLDC.
 	// Channel 1 is servo and here is not changed.
 	
-	lseek(fd, SEEK_SET, 0); // Seek on start.
-	
-	int s = sizeof(duty[0])*1;
-	r = write(fd, (char*)&duty[0], s);
-	printf("s = %d r = %d\n", s,r);
-	if(r != s){
 
-		return 4; //write went wrong
-			
-	}
 	
 	return 0;
 
 }
 
+
+
+//Funkcija za upravljacki servo za skretanje
+int runServo(int duty_servo){
+
+
+	duty[1] = duty_servo;
+
+	for(int i = 0; i < 2; i++){
+		printf("duty[%d] = %d\n",i, duty[i]);
+	}
+
+	return 0;
+
+
+
+}
 
 
 // This tels msvc to link agains winmm.lib. Pretty nasty though.
@@ -163,6 +135,8 @@ int main()
     //flags
     int flagBLDC;
     int flagServo;
+    
+    int r,s;
 	
     
     //Otvoriti fd.
@@ -183,11 +157,13 @@ int main()
 	ia.ch = 0;
 	ia.moduo = moduo;
 	
-	int r = ioctl(fd, IOCTL_MOTOR_CLTR_SET_MODUO, *(unsigned long*)&ia);
+	r = ioctl(fd, IOCTL_MOTOR_CLTR_SET_MODUO, *(unsigned long*)&ia);
 	if(r){
 		
 		return 3; //ioctl went wrong returning
 	}
+
+     
 	
 
     libenjoy_context *ctx = libenjoy_init(); // initialize the library
@@ -231,11 +207,21 @@ int main()
                             //poziva se BLDC motor (pogon) - runBLDC(povratna vrednost od joypad2speed)
 			    flagBLDC = runBLDC(speed);
 
-			    if(flagBLDC == 4){
-
-			    	fprintf(stderr, "ERROR: write went wrong!\n");			
-		 	    }
+			   	lseek(fd, SEEK_SET, 0); // Seek on start.
+	
+				s = sizeof(duty[0])*1;
+				r = write(fd, (char*)&duty[0], s);
+				printf("s = %d r = %d\n", s,r);
+				if(r != s){
+					perror("write went wrong\n");
+					return 4; //write went wrong
+						
+				}
 				
+				
+				
+				
+							
                         }else if(ev.part_id == 0){ //axis 0 - x-osa
 
                             duty_servo = joypad2duty(ev.data);
@@ -244,16 +230,19 @@ int main()
 			    flagServo = runServo(duty_servo);
 			    
 			    
-			    if(flagServo == 3){
-				    
-				fprintf(stderr, "ERROR: ioctl went wrong returning!\n");	
-			    }
-
-			    else if(flagServo == 4){
-					
-				fprintf(stderr, "ERROR: write went wrong!\n");	
-
-			    }
+		
+				
+				lseek(fd, SEEK_SET, 0);
+				
+				s = sizeof(duty[1])*1;
+				r = write(fd, (char*)&duty[1], s);
+				printf("s = %d r = %d\n", s,r);
+				if(r != s){
+					perror("write went wrong\n");
+					return 4; //write went wrong
+						
+				}
+	
                         }
 
 
