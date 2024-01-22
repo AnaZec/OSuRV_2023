@@ -220,7 +220,6 @@ int main()
 	
                         }
 
-
                         break;
                     case LIBENJOY_EV_BUTTON:
                         printf("%u: button %d val %d\n", ev.joy_id, ev.part_id, ev.data);
