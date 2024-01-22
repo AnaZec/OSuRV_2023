@@ -17,7 +17,7 @@
 #include <sys/ioctl.h> // ioctl()
 #include <errno.h> //errno
 
-#include "/home/pi/OSuRV_2023/SW/Driver/motor_ctrl/include/motor_ctrl.h"// dev/motor_ctrl
+#include "motor_ctrl.h"
 
 static int16_t duty[2]; //duty[0] - BLDC, duty[1] - servo
 
@@ -64,7 +64,7 @@ int joypad2speed(int joyNum){
 
 
 //Funkcija run_bldc
-int runBLDC(int speed){ //BLDC je channel 0 ostali su servo
+void runBLDC(int speed){ //BLDC je channel 0 ostali su servo
 	
 
 	// |speed| = [0, 100] -> threshold = [10, 0].
@@ -86,13 +86,12 @@ int runBLDC(int speed){ //BLDC je channel 0 ostali su servo
 	}
 	
 	printf("speed = %d\n", speed);
-		
-	return 0;
+
 
 }
 
 //Funkcija za upravljacki servo za skretanje
-int runServo(int duty_servo){
+void runServo(int duty_servo){
 
 
 	duty[1] = duty_servo;
@@ -100,8 +99,6 @@ int runServo(int duty_servo){
 	for(int i = 0; i < 2; i++){
 		printf("duty[%d] = %d\n",i, duty[i]);
 	}
-
-	return 0;
 
 }
 
@@ -143,6 +140,22 @@ int main()
     if(r){
     
 	return 3; //ioctl went wrong returning
+	
+	
+	}
+	duty[0] = 10;
+   	duty[1] = 500;
+   	
+   	
+   	lseek(fd, SEEK_SET, 0); // seek to start
+   	s = sizeof(duty);
+    r = write(fd, (char*)&duty, s);
+    printf("s = %d r = %d\n", s,r); // dodato za debagovanje
+    if(r != s){
+	perror("write went wrong\n");
+	return 4; //write went wrong
+   	
+   	
 	
     }
 
@@ -186,37 +199,39 @@ int main()
                             speed = joypad2speed(ev.data);
                             
                             //poziva se BLDC motor (pogon) - runBLDC(povratna vrednost od joypad2speed)
-			    flagBLDC = runBLDC(speed);
+							runBLDC(speed);
+							
+							
 
-			    lseek(fd, SEEK_SET, 0); // seek on start
-	
-			    s = sizeof(duty[0])*1;
-			    r = write(fd, (char*)&duty[0], s);
-			    printf("s = %d r = %d\n", s,r); // dodato za debagovanje
-			    if(r != s){
-				perror("write went wrong\n");
-				return 4; //write went wrong
-						
-	           	    }
+							lseek(fd, SEEK_SET, 0); // seek to start
+
+							s = sizeof(duty);
+							r = write(fd, (char*)&duty, s);
+							printf("s = %d r = %d\n", s,r); // dodato za debagovanje
+							if(r != s){
+								perror("write went wrong\n");
+								return 4; //write went wrong
+									
+	           	    		}
 				
                         }else if(ev.part_id == 0){ //axis 0 - x-osa
 
                             duty_servo = joypad2duty(ev.data);
 
                             //poziva se servo motor za skretanje levo - desno
-			    flagServo = runServo(duty_servo);
-			    
+							runServo(duty_servo);
+							
 
-			    lseek(fd, SEEK_SET, 0); // seek on start
-				
-			    s = sizeof(duty[1])*1;
-			    r = write(fd, (char*)&duty[1], s);
-			    printf("s = %d r = %d\n", s,r);
-			    if(r != s){
-				perror("write went wrong\n");
-				return 4; //write went wrong
-						
-			    }
+							lseek(fd, SEEK_SET, 0); // seek to start
+							
+							s = sizeof(duty);
+							r = write(fd, (char*)&duty, s);
+							printf("s = %d r = %d\n", s,r);
+							if(r != s){
+								perror("write went wrong\n");
+								return 4; //write went wrong
+									
+							}
 	
                         }
 
