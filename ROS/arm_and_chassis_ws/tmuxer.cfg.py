@@ -40,7 +40,7 @@ _targets = {
 	'setup': [
 		{
 			'driver': 'cd ../../SW/Driver/motor_ctrl/',
-			'app': 'cd ../../SW/Test/test_app/test/',
+			'app': 'cd ../../SW/Test/test_app/',
 			'dmesg': 'cd ../../SW/Driver/motor_ctrl/',
 		},
 		
